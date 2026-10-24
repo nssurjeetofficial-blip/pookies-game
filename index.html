@@ -1,0 +1,469 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff0f7">
+  <title>RETIRED SURJEET X POOKIES GAME 🎀</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">  <style>
+    :root {
+      --pink: #ff83b5;
+      --pink-light: #fff0f7;
+      --purple: #b9a5ff;
+      --text: #573c65;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 24px 15px;
+      font-family: 'Nunito', sans-serif;
+      color: var(--text);
+      background: linear-gradient(145deg, #fff0f7, #f2edff, #ffe8f2);
+      overflow-x: hidden;
+    }
+
+    .hearts {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .heart {
+      position: absolute;
+      bottom: -40px;
+      opacity: 0.5;
+      animation: floatUp 9s linear infinite;
+    }
+
+    @keyframes floatUp {
+      to {
+        transform: translateY(-115vh) rotate(35deg);
+        opacity: 0;
+      }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 490px;
+      margin: 0 auto;
+    }
+
+    .badge {
+      display: table;
+      margin: 0 auto 15px;
+      padding: 8px 15px;
+      background: #ffffffb8;
+      border: 1px solid #ffffff;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    header {
+      text-align: center;
+      margin: 22px 0;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+      animation: bob 3s ease-in-out infinite;
+    }
+
+    @keyframes bob {
+      50% { transform: translateY(-7px); }
+    }
+
+    h1 {
+      font-size: clamp(25px, 7vw, 35px);
+      font-weight: 900;
+      line-height: 1.2;
+      color: #d95d9b;
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #85658f;
+    }
+
+    .card {
+      padding: 25px 20px;
+      margin-top: 20px;
+      background: #ffffffd9;
+      border: 1px solid #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 15px 45px #b98cb526;
+      backdrop-filter: blur(12px);
+    }
+
+    .step-title {
+      text-align: center;
+      font-size: 21px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      text-align: center;
+      font-size: 13px;
+      color: #977da0;
+      margin-bottom: 22px;
+    }
+
+    .gender-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .gender-btn {
+      padding: 18px 8px;
+      background: #fff5fa;
+      border: 2px solid #f5dbea;
+      border-radius: 20px;
+      color: var(--text);
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .gender-btn .emoji {
+      display: block;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .gender-btn.selected {
+      background: #ffe2f0;
+      border-color: var(--pink);
+      transform: translateY(-2px);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #f0deef;
+      border-radius: 15px;
+      background: #fffaff;
+      outline: none;
+      font: inherit;
+      color: var(--text);
+      margin-bottom: 17px;
+    }
+
+    input:focus {
+      border-color: var(--purple);
+    }
+
+    .main-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 16px;
+      color: white;
+      background: linear-gradient(100deg, #ff80b4, #b39aff);
+      box-shadow: 0 7px 20px #d7a0db55;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .main-btn:active {
+      transform: scale(0.98);
+    }
+
+    .message {
+      display: none;
+      margin-top: 18px;
+      padding: 18px 14px;
+      border-radius: 20px;
+      background: #fff0f8;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+
+    .message.show {
+      display: block;
+      animation: appear 0.4s ease;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 9px;
+      margin: 20px 0;
+    }
+
+    .number-btn {
+      aspect-ratio: 1;
+      border: 2px solid #f2dff3;
+      background: #fff8fc;
+      color: #9a6db2;
+      border-radius: 15px;
+      font: inherit;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .number-btn.selected {
+      background: #ffb8d8;
+      border-color: #ed70ab;
+      color: #6f3659;
+      transform: scale(1.04);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 25px 5px 10px;
+      font-size: 12px;
+      color: #967c9d;
+      line-height: 2;
+    }
+
+    .small-heart {
+      color: #e96ba7;
+    }
+
+    @media (max-width: 360px) {
+      .card { padding: 20px 14px; }
+      .logo { font-size: 40px; }
+    }
+  </style></head><body>
+  <div class="hearts" id="hearts"></div>  <main class="container">
+    <div class="badge">୨୧ ✧ A LITTLE WORLD OF CUTENESS ✧ ୨୧</div><header>
+  <div class="logo">🎀🧸</div>
+  <h1>RETIRED SURJEET<br>X POOKIES GAME ‼️</h1>
+  <p class="subtitle">
+    A little game, a little luck & lots of cuteness! 💗<br>
+    Come on in, cutie. We were waiting for you! 🤭
+  </p>
+</header>
+
+<section class="card" id="welcomeCard">
+  <h2 class="step-title">First, tell us about you! 🌷</h2>
+  <p class="hint">Choose your vibe, pookie. 💕</p>
+
+  <div class="gender-options">
+    <button class="gender-btn" data-gender="male" type="button">
+      <span class="emoji">🧸</span>
+      Sir Ji 💙
+    </button>
+
+    <button class="gender-btn" data-gender="female" type="button">
+      <span class="emoji">🎀</span>
+      Cutie 💗
+    </button>
+  </div>
+
+  <form id="welcomeForm">
+    <label for="playerName">Your cute name 🌸</label>
+    <input
+      id="playerName"
+      type="text"
+      maxlength="24"
+      placeholder="Enter your name, pookie..."
+      autocomplete="nickname"
+      required
+    >
+
+    <button class="main-btn" type="submit">
+      Enter Our Little World 💌
+    </button>
+  </form>
+
+  <div class="message" id="welcomeMessage" aria-live="polite"></div>
+</section>
+
+<section class="card hidden" id="gameCard">
+  <h2 class="step-title">Pick Your Lucky Number 🎯</h2>
+  <p class="hint">Choose one number from 1 to 10! 🤭</p>
+
+  <div class="number-grid" id="numberGrid"></div>
+
+  <button class="main-btn" id="playButton" type="button">
+    Let's See My Luck! 🍀
+  </button>
+
+  <div class="message" id="resultMessage" aria-live="polite"></div>
+</section>
+
+<footer class="footer">
+  Made with <span class="small-heart">♥</span> and lots of pookie energy 🎀<br>
+  Be kind, spread love & keep smiling! 🌷
+</footer>
+
+  </main>  <script>
+    const state = {
+      gender: null,
+      name: "",
+      number: null
+    };
+
+    const genderButtons = document.querySelectorAll(".gender-btn");
+    const welcomeForm = document.getElementById("welcomeForm");
+    const nameInput = document.getElementById("playerName");
+    const welcomeMessage = document.getElementById("welcomeMessage");
+    const gameCard = document.getElementById("gameCard");
+    const numberGrid = document.getElementById("numberGrid");
+    const resultMessage = document.getElementById("resultMessage");
+
+    genderButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        state.gender = button.dataset.gender;
+
+        genderButtons.forEach(item => {
+          item.classList.toggle("selected", item === button);
+        });
+      });
+    });
+
+    welcomeForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const name = nameInput.value.trim();
+
+      if (!state.gender) {
+        alert("Pookie, pehle Sir Ji ya Cutie select karo! 🎀");
+        return;
+      }
+
+      if (!name) {
+        alert("Apna cute sa naam toh batao! 🧸");
+        return;
+      }
+
+      state.name = name;
+
+      const safeName = escapeHTML(name);
+
+      if (state.gender === "male") {
+        welcomeMessage.innerHTML =
+          `🧸💙 Welcome Sir Ji, <strong>${safeName}</strong>! 💙🧸<br><br>` +
+          `Hamari website par aane ke liye aapka bahut-bahut shukriya, Sir Ji! 🥹🌷<br>` +
+          `Chaliye dekhte hain aaj kismat aapka kitna saath deti hai! 🤭🎀`;
+      } else {
+        welcomeMessage.innerHTML =
+          `🎀💗 Awww, Welcome Cutie <strong>${safeName}</strong>! 💗🎀<br><br>` +
+          `Hamari cute si website par aane ke liye aapka dil se shukriya! 🥹🧸<br>` +
+          `Chaliye Cutie, dekhte hain aaj aapki kismat kya surprise laati hai! 🤭🌸`;
+      }
+
+      welcomeMessage.classList.add("show");
+      gameCard.classList.remove("hidden");
+
+      gameCard.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+
+    for (let number = 1; number <= 10; number++) {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.className = "number-btn";
+      button.textContent = number;
+      button.setAttribute("aria-label", `Choose number ${number}`);
+
+      button.addEventListener("click", () => {
+        state.number = number;
+
+        document.querySelectorAll(".number-btn").forEach(item => {
+          item.classList.toggle("selected", item === button);
+        });
+
+        resultMessage.classList.remove("show");
+      });
+
+      numberGrid.appendChild(button);
+    }
+
+    document.getElementById("playButton").addEventListener("click", () => {
+      if (state.number === null) {
+        alert("Cutie, pehle apna lucky number choose karo! 🎀");
+        return;
+      }
+
+      /*
+        Demo only:
+        This button is intentionally not allowed to declare a winner.
+        The next step will connect it to the secure Supabase function.
+      */
+      resultMessage.innerHTML =
+        `💌 Your number is <strong>${state.number}</strong>! 🎀<br><br>` +
+        `Awww, ${escapeHTML(state.name)}, your game is almost ready! 🧸💗<br>` +
+        `Secure game connection is coming next. 🌷✨`;
+
+      resultMessage.classList.add("show");
+      resultMessage.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+    });
+
+    function escapeHTML(value) {
+      return value.replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[character]);
+    }
+
+    // Floating hearts decoration
+    const heartContainer = document.getElementById("hearts");
+    const heartSymbols = ["♡", "💗", "🎀", "✧", "💕"];
+
+    for (let i = 0; i < 18; i++) {
+      const heart = document.createElement("span");
+
+      heart.className = "heart";
+      heart.textContent =
+        heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+
+      heart.style.left = Math.random() * 100 + "%";
+      heart.style.animationDelay = Math.random() * 9 + "s";
+      heart.style.animationDuration = (7 + Math.random() * 7) + "s";
+      heart.style.fontSize = (14 + Math.random() * 15) + "px";
+
+      heartContainer.appendChild(heart);
+    }
+  </script></body>
+  </html>
