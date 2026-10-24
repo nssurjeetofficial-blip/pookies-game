@@ -371,6 +371,75 @@ const supabaseClient = window.supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
+    const authCard = document.getElementById("authCard");
+const authForm = document.getElementById("authForm");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authMessage = document.getElementById("authMessage");
+const loginButton = document.getElementById("loginButton");
+const signupButton = document.getElementById("signupButton");
+
+function showAuthMessage(message) {
+authMessage.textContent = message;
+authMessage.classList.add("show");
+}
+
+async function handleAuth(mode) {
+const email = authEmail.value.trim();
+const password = authPassword.value;
+
+if (!email || !password) {
+showAuthMessage("Please enter your email and password. 💗");
+return;
+}
+
+loginButton.disabled = true;
+signupButton.disabled = true;
+showAuthMessage("One moment, pookie... 🎀");
+
+try {
+let result;
+
+if (mode === "signup") {
+  result = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+} else {
+  result = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+}
+
+if (result.error) throw result.error;
+
+if (!result.data.session) {
+  showAuthMessage(
+    "Account created! If email confirmation is enabled, check your inbox before logging in. 💌"
+  );
+  return;
+}
+
+showAuthMessage("Login successful! Welcome, pookie! 💗");
+
+authCard.classList.add("hidden");
+document.getElementById("welcomeCard").classList.remove("hidden");
+
+} catch (error) {
+showAuthMessage(error.message || "Something went wrong. Please try again.");
+} finally {
+loginButton.disabled = false;
+signupButton.disabled = false;
+}
+}
+
+loginButton.addEventListener("click", () => handleAuth("login"));
+signupButton.addEventListener("click", () => handleAuth("signup"));
+
+authForm.addEventListener("submit", event => {
+event.preventDefault();
+});
     
     const state = {
       gender: null,
