@@ -330,7 +330,15 @@
   Be kind, spread love & keep smiling! 🌷
 </footer>
 
+  
   </main>  <script>
+    const SUPABASE_URL = "https://ympapgkyybosupolhynb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_y6_iNtd-1CZTcs8K190naw_2QrWCyOZ";
+
+const supabaseClient = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
     const state = {
       gender: null,
       name: "",
