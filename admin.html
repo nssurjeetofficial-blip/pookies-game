@@ -80,6 +80,9 @@
       <h2>💗 Dashboard</h2>
       <p id="welcome"></p>
       <button id="refreshBtn">🔄 Refresh Dashboard</button>
+      <button id="newRoundBtn">🎮 Start New Round</button>
+<p id="roundMessage" class="message"></p>
+      
       <button id="logoutBtn">Logout</button>
       <p id="dashboardMessage" class="message"></p>
     </div><div class="stats">
@@ -312,5 +315,44 @@ db.auth.onAuthStateChange((_event, session) => {
 (async () => {
   if (await verifyAdmin()) await loadDashboard();
 })();
+$("newRoundBtn").addEventListener("click", async () => {
+  const confirmed = confirm(
+    "Start a new round? The round number will increase."
+  );
+
+  if (!confirmed) return;
+
+  const button = $("newRoundBtn");
+  button.disabled = true;
+  showMessage("roundMessage", "Starting new round...");
+
+  try {
+    const allowed = await verifyAdmin();
+
+    if (!allowed) {
+      throw new Error("Admin access denied.");
+    }
+
+    const { data, error } = await db.rpc(
+      "start_new_pookies_round"
+    );
+
+    if (error) throw error;
+
+    showMessage(
+      "roundMessage",
+      `🎉 New round started! Round: ${data.current_round}`
+    );
+
+    await loadDashboard();
+  } catch (error) {
+    showMessage(
+      "roundMessage",
+      "Could not start new round: " + error.message
+    );
+  } finally {
+    button.disabled = false;
+  }
+});
 </script></body>
 </html>
