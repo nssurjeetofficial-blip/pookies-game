@@ -380,10 +380,10 @@ const loginButton = document.getElementById("loginButton");
 const signupButton = document.getElementById("signupButton");
 
 function showAuthMessage(message) {
-authMessage.textContent = message;
-authMessage.classList.add("show");
+  authMessage.textContent = message;
+  authMessage.classList.add("show");
+  authMessage.style.display = "block";
 }
-
 async function handleAuth(mode) {
 const email = authEmail.value.trim();
 const password = authPassword.value;
