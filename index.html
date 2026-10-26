@@ -364,14 +364,25 @@
 
   
   </main>  <script>
-    const SUPABASE_URL = "https://ympapgkyybosupolhynb.supabase.co";
+    // ==========================================
+// RETIRED SURJEET X POOKIES GAME 🎀
+// Complete JavaScript
+// ==========================================
+
+// Supabase connection
+const SUPABASE_URL = "https://ympapgkyybosupolhynb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_y6_iNtd-1CZTcs8K190naw_2QrWCyOZ";
 
 const supabaseClient = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
-    const authCard = document.getElementById("authCard");
+
+// ==========================================
+// HTML ELEMENTS
+// ==========================================
+
+const authCard = document.getElementById("authCard");
 const authForm = document.getElementById("authForm");
 const authEmail = document.getElementById("authEmail");
 const authPassword = document.getElementById("authPassword");
@@ -379,203 +390,425 @@ const authMessage = document.getElementById("authMessage");
 const loginButton = document.getElementById("loginButton");
 const signupButton = document.getElementById("signupButton");
 
+const welcomeCard = document.getElementById("welcomeCard");
+const welcomeForm = document.getElementById("welcomeForm");
+const nameInput = document.getElementById("playerName");
+const welcomeMessage = document.getElementById("welcomeMessage");
+
+const gameCard = document.getElementById("gameCard");
+const numberGrid = document.getElementById("numberGrid");
+const resultMessage = document.getElementById("resultMessage");
+const playButton = document.getElementById("playButton");
+
+// ==========================================
+// GAME STATE
+// ==========================================
+
+const state = {
+  gender: null,
+  name: "",
+  number: null,
+  isAdmin: false
+};
+
+// ==========================================
+// HELPERS
+// ==========================================
+
 function showAuthMessage(message) {
   authMessage.textContent = message;
   authMessage.classList.add("show");
   authMessage.style.display = "block";
 }
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+// ==========================================
+// INITIAL SCREEN
+// ==========================================
+
+welcomeCard.classList.add("hidden");
+gameCard.classList.add("hidden");
+
+// ==========================================
+// SIGNUP AND LOGIN
+// ==========================================
+
 async function handleAuth(mode) {
-const email = authEmail.value.trim();
-const password = authPassword.value;
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
 
-if (!email || !password) {
-showAuthMessage("Please enter your email and password. 💗");
-return;
+  if (!email || !password) {
+    showAuthMessage("Please enter your email and password. 💗");
+    return;
+  }
+
+  if (password.length < 6) {
+    showAuthMessage("Password must contain at least 6 characters. 🎀");
+    return;
+  }
+
+  loginButton.disabled = true;
+  signupButton.disabled = true;
+
+  showAuthMessage("One moment, pookie... 🎀");
+
+  try {
+    let result;
+
+    if (mode === "signup") {
+      result = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+    } else {
+      result = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+    }
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Email confirmation may be required.
+    if (!result.data.session) {
+      showAuthMessage(
+        "Account created! Please verify your email, then log in. 💌"
+      );
+      return;
+    }
+
+    showAuthMessage("Login successful! Welcome, pookie! 💗");
+
+    await openUserArea();
+
+  } catch (error) {
+    console.error("Authentication error:", error);
+
+    showAuthMessage(
+      error.message || "Something went wrong. Please try again."
+    );
+
+  } finally {
+    loginButton.disabled = false;
+    signupButton.disabled = false;
+  }
 }
 
-loginButton.disabled = true;
-signupButton.disabled = true;
-showAuthMessage("One moment, pookie... 🎀");
+loginButton.addEventListener("click", () => {
+  handleAuth("login");
+});
 
-try {
-let result;
-
-if (mode === "signup") {
-  result = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
-} else {
-  result = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-}
-
-if (result.error) throw result.error;
-
-if (!result.data.session) {
-  showAuthMessage(
-    "Account created! If email confirmation is enabled, check your inbox before logging in. 💌"
-  );
-  return;
-}
-
-showAuthMessage("Login successful! Welcome, pookie! 💗");
-
-authCard.classList.add("hidden");
-document.getElementById("welcomeCard").classList.remove("hidden");
-
-} catch (error) {
-showAuthMessage(error.message || "Something went wrong. Please try again.");
-} finally {
-loginButton.disabled = false;
-signupButton.disabled = false;
-}
-}
-
-loginButton.addEventListener("click", () => handleAuth("login"));
-signupButton.addEventListener("click", () => handleAuth("signup"));
+signupButton.addEventListener("click", () => {
+  handleAuth("signup");
+});
 
 authForm.addEventListener("submit", event => {
-event.preventDefault();
+  event.preventDefault();
 });
-    
-    const state = {
-      gender: null,
-      name: "",
-      number: null
-    };
 
-    const genderButtons = document.querySelectorAll(".gender-btn");
-    const welcomeForm = document.getElementById("welcomeForm");
-    const nameInput = document.getElementById("playerName");
-    const welcomeMessage = document.getElementById("welcomeMessage");
-    const gameCard = document.getElementById("gameCard");
-    const numberGrid = document.getElementById("numberGrid");
-    const resultMessage = document.getElementById("resultMessage");
+// ==========================================
+// OPEN USER AREA
+// ==========================================
 
-    genderButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        state.gender = button.dataset.gender;
+async function openUserArea() {
+  const { data: { user }, error } =
+    await supabaseClient.auth.getUser();
 
-        genderButtons.forEach(item => {
-          item.classList.toggle("selected", item === button);
-        });
-      });
+  if (error || !user) {
+    showAuthMessage("Please log in again, pookie! 💗");
+    return;
+  }
+
+  // Check admin status using the admin table.
+  // RLS must allow users to read their own admin record.
+  const { data: adminRecord, error: adminError } =
+    await supabaseClient
+      .from("pookies_admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+  if (adminError) {
+    console.warn("Admin check:", adminError.message);
+  }
+
+  state.isAdmin = Boolean(adminRecord);
+
+  authCard.classList.add("hidden");
+  welcomeCard.classList.remove("hidden");
+  gameCard.classList.add("hidden");
+
+  // Load an existing profile, if one exists.
+  const { data: profile, error: profileError } =
+    await supabaseClient
+      .from("pookies_users")
+      .select("display_name, gender")
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (profileError) {
+    console.warn("Profile load:", profileError.message);
+  }
+
+  if (profile) {
+    state.name = profile.display_name || "";
+    state.gender = profile.gender || null;
+
+    nameInput.value = state.name;
+
+    document.querySelectorAll(".gender-btn").forEach(button => {
+      const selectedGender = button.dataset.gender;
+
+      button.classList.toggle(
+        "selected",
+        selectedGender === state.gender
+      );
+    });
+  }
+}
+
+// ==========================================
+// RESTORE SESSION AFTER PAGE RELOAD
+// ==========================================
+
+async function restoreSession() {
+  const { data: { session }, error } =
+    await supabaseClient.auth.getSession();
+
+  if (error) {
+    console.error("Session error:", error);
+    return;
+  }
+
+  if (session) {
+    await openUserArea();
+  } else {
+    authCard.classList.remove("hidden");
+    welcomeCard.classList.add("hidden");
+    gameCard.classList.add("hidden");
+  }
+}
+
+// ==========================================
+// GENDER SELECTION
+// ==========================================
+
+document.querySelectorAll(".gender-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    state.gender = button.dataset.gender;
+
+    document.querySelectorAll(".gender-btn").forEach(item => {
+      item.classList.toggle("selected", item === button);
+    });
+  });
+});
+
+// ==========================================
+// SAVE PROFILE AND SHOW WELCOME
+// ==========================================
+
+welcomeForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const name = nameInput.value.trim();
+
+  if (!state.gender) {
+    alert("Pookie, pehle Sir Ji ya Cutie select karo! 🎀");
+    return;
+  }
+
+  if (!name) {
+    alert("Apna cute sa naam toh batao! 🧸");
+    return;
+  }
+
+  const { data: { user }, error: userError } =
+    await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    alert("Session expired. Please log in again! 💗");
+    return;
+  }
+
+  state.name = name;
+
+  // Save profile using the logged-in user's ID.
+  const { error: profileError } = await supabaseClient
+    .from("pookies_users")
+    .upsert(
+      {
+        id: user.id,
+        display_name: name,
+        gender: state.gender
+      },
+      {
+        onConflict: "id"
+      }
+    );
+
+  if (profileError) {
+    console.error("Profile save error:", profileError);
+    alert("Profile save nahi hua: " + profileError.message);
+    return;
+  }
+
+  const safeName = escapeHTML(name);
+
+  if (state.gender === "male") {
+    welcomeMessage.innerHTML =
+      `🧸💙 Welcome Sir Ji, <strong>${safeName}</strong>! 💙🧸<br><br>` +
+      `Hamari website par aane ke liye aapka bahut-bahut shukriya, Sir Ji! 🥹🌷<br>` +
+      `Chaliye dekhte hain aaj kismat aapka kitna saath deti hai! 🤭🎀`;
+  } else {
+    welcomeMessage.innerHTML =
+      `🎀💗 Awww, Welcome Cutie <strong>${safeName}</strong>! 💗🎀<br><br>` +
+      `Hamari cute si website par aane ke liye aapka dil se shukriya! 🥹🧸<br>` +
+      `Chaliye Cutie, dekhte hain aaj aapki kismat kya surprise laati hai! 🤭🌸`;
+  }
+
+  welcomeMessage.classList.add("show");
+  gameCard.classList.remove("hidden");
+
+  gameCard.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
+
+// ==========================================
+// CREATE NUMBER BUTTONS (1–10)
+// ==========================================
+
+numberGrid.innerHTML = "";
+
+for (let number = 1; number <= 10; number++) {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.className = "number-btn";
+  button.textContent = number;
+  button.setAttribute("aria-label", `Choose number ${number}`);
+
+  button.addEventListener("click", () => {
+    state.number = number;
+
+    document.querySelectorAll(".number-btn").forEach(item => {
+      item.classList.toggle("selected", item === button);
     });
 
-    welcomeForm.addEventListener("submit", event => {
-      event.preventDefault();
+    resultMessage.classList.remove("show");
+  });
 
-      const name = nameInput.value.trim();
+  numberGrid.appendChild(button);
+}
 
-      if (!state.gender) {
-        alert("Pookie, pehle Sir Ji ya Cutie select karo! 🎀");
-        return;
-      }
+// ==========================================
+// SECURE GAME SUBMISSION
+// ==========================================
 
-      if (!name) {
-        alert("Apna cute sa naam toh batao! 🧸");
-        return;
-      }
+playButton.addEventListener("click", async () => {
+  if (state.number === null) {
+    alert("Cutie, pehle apna lucky number choose karo! 🎀");
+    return;
+  }
 
-      state.name = name;
+  playButton.disabled = true;
+  resultMessage.textContent = "Checking your lucky number... 💗";
+  resultMessage.classList.add("show");
 
-      const safeName = escapeHTML(name);
+  try {
+    const { data: { user }, error: userError } =
+      await supabaseClient.auth.getUser();
 
-      if (state.gender === "male") {
-        welcomeMessage.innerHTML =
-          `🧸💙 Welcome Sir Ji, <strong>${safeName}</strong>! 💙🧸<br><br>` +
-          `Hamari website par aane ke liye aapka bahut-bahut shukriya, Sir Ji! 🥹🌷<br>` +
-          `Chaliye dekhte hain aaj kismat aapka kitna saath deti hai! 🤭🎀`;
-      } else {
-        welcomeMessage.innerHTML =
-          `🎀💗 Awww, Welcome Cutie <strong>${safeName}</strong>! 💗🎀<br><br>` +
-          `Hamari cute si website par aane ke liye aapka dil se shukriya! 🥹🧸<br>` +
-          `Chaliye Cutie, dekhte hain aaj aapki kismat kya surprise laati hai! 🤭🌸`;
-      }
-
-      welcomeMessage.classList.add("show");
-      gameCard.classList.remove("hidden");
-
-      gameCard.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    });
-
-    for (let number = 1; number <= 10; number++) {
-      const button = document.createElement("button");
-
-      button.type = "button";
-      button.className = "number-btn";
-      button.textContent = number;
-      button.setAttribute("aria-label", `Choose number ${number}`);
-
-      button.addEventListener("click", () => {
-        state.number = number;
-
-        document.querySelectorAll(".number-btn").forEach(item => {
-          item.classList.toggle("selected", item === button);
-        });
-
-        resultMessage.classList.remove("show");
-      });
-
-      numberGrid.appendChild(button);
+    if (userError || !user) {
+      throw new Error("Please log in again.");
     }
 
-    document.getElementById("playButton").addEventListener("click", () => {
-      if (state.number === null) {
-        alert("Cutie, pehle apna lucky number choose karo! 🎀");
-        return;
+    // This RPC must exist in Supabase.
+    // The server-side function determines the result.
+    const { data, error } = await supabaseClient.rpc(
+      "submit_pookies_guess",
+      {
+        p_number: state.number
       }
+    );
 
-      /*
-        Demo only:
-        This button is intentionally not allowed to declare a winner.
-        The next step will connect it to the secure Supabase function.
-      */
+    if (error) {
+      throw error;
+    }
+
+    const result = typeof data === "string"
+      ? JSON.parse(data)
+      : data;
+
+    if (!result || typeof result !== "object") {
+      throw new Error("Invalid game response.");
+    }
+
+    const safeName = escapeHTML(result.name || state.name);
+
+    if (result.won === true) {
       resultMessage.innerHTML =
-        `💌 Your number is <strong>${state.number}</strong>! 🎀<br><br>` +
-        `Awww, ${escapeHTML(state.name)}, your game is almost ready! 🧸💗<br>` +
-        `Secure game connection is coming next. 🌷✨`;
-
-      resultMessage.classList.add("show");
-      resultMessage.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest"
-      });
-    });
-
-    function escapeHTML(value) {
-      return value.replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      })[character]);
+        `🎉💗 Congratulations, <strong>${safeName}</strong>! 💗🎉<br><br>` +
+        `${escapeHTML(result.message || "You won this round! 🎀")}`;
+    } else {
+      resultMessage.innerHTML =
+        `💌 <strong>${safeName}</strong>, your number was ${state.number}. 🎀<br><br>` +
+        `${escapeHTML(result.message || "Better luck next round! 🌸")}`;
     }
 
-    // Floating hearts decoration
-    const heartContainer = document.getElementById("hearts");
-    const heartSymbols = ["♡", "💗", "🎀", "✧", "💕"];
+  } catch (error) {
+    console.error("Game error:", error);
 
-    for (let i = 0; i < 18; i++) {
-      const heart = document.createElement("span");
+    resultMessage.textContent =
+      error.message || "Game could not be loaded. Please try again.";
 
-      heart.className = "heart";
-      heart.textContent =
-        heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+  } finally {
+    resultMessage.classList.add("show");
+    playButton.disabled = false;
+  }
+});
 
-      heart.style.left = Math.random() * 100 + "%";
-      heart.style.animationDelay = Math.random() * 9 + "s";
-      heart.style.animationDuration = (7 + Math.random() * 7) + "s";
-      heart.style.fontSize = (14 + Math.random() * 15) + "px";
+// ==========================================
+// FLOATING HEARTS DECORATION
+// ==========================================
 
-      heartContainer.appendChild(heart);
-    }
+const heartContainer = document.getElementById("hearts");
+const heartSymbols = ["♡", "💗", "🎀", "✧", "💕"];
+
+if (heartContainer) {
+  for (let i = 0; i < 18; i++) {
+    const heart = document.createElement("span");
+
+    heart.className = "heart";
+
+    heart.textContent =
+      heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+
+    heart.style.left = Math.random() * 100 + "%";
+    heart.style.animationDelay = Math.random() * 9 + "s";
+    heart.style.animationDuration = (7 + Math.random() * 7) + "s";
+    heart.style.fontSize = (14 + Math.random() * 15) + "px";
+
+    heartContainer.appendChild(heart);
+  }
+}
+
+// ==========================================
+// START APPLICATION
+// ==========================================
+
+restoreSession();
   </script></body>
   </html>
