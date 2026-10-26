@@ -1,0 +1,316 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Panel | Pookies Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Nunito, Arial, sans-serif;
+      background: linear-gradient(135deg, #ffe0f0, #e6ddff, #fff0f7);
+      color: #553d67;
+    }
+    .container { max-width: 900px; margin: auto; }
+    h1 { text-align: center; color: #a34e91; }
+    .card {
+      background: rgba(255,255,255,.88);
+      border: 1px solid #f2c8e8;
+      border-radius: 20px;
+      padding: 20px;
+      margin: 18px 0;
+      box-shadow: 0 8px 24px #b985b526;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      border-radius: 12px;
+      border: 1px solid #e7b9df;
+      font-size: 15px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      color: white;
+      background: linear-gradient(90deg, #ed8dc9, #a99aff);
+      font-weight: bold;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      background: #fff0fa;
+      border-radius: 14px;
+      text-align: center;
+      padding: 16px;
+    }
+    .stat strong { display: block; font-size: 28px; }
+    .hidden { display: none !important; }
+    .message { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 450px; }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #f0d5eb;
+    }
+    th { background: #fff0fa; }
+    .note { font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>👑 Pookies Admin Panel 🎀</h1>  <section id="loginCard" class="card">
+    <h2>🔐 Admin Login</h2>
+    <p>Login with your authorized admin account.</p>
+    <form id="loginForm">
+      <input id="email" type="email" placeholder="Email address" required>
+      <input id="password" type="password" placeholder="Password" required>
+      <button id="loginBtn" type="submit">Login</button>
+    </form>
+    <p id="loginMessage" class="message"></p>
+  </section>  <section id="dashboard" class="hidden">
+    <div class="card">
+      <h2>💗 Dashboard</h2>
+      <p id="welcome"></p>
+      <button id="refreshBtn">🔄 Refresh Dashboard</button>
+      <button id="logoutBtn">Logout</button>
+      <p id="dashboardMessage" class="message"></p>
+    </div><div class="stats">
+  <div class="stat">👥 Total Players<strong id="playerCount">—</strong></div>
+  <div class="stat">🎮 Total Entries<strong id="entryCount">—</strong></div>
+  <div class="stat">🏆 Winning Number<strong id="winningNumber">—</strong></div>
+  <div class="stat">🔄 Current Round<strong id="roundNumber">—</strong></div>
+</div>
+
+<div class="card">
+  <h2>🏆 Game Settings</h2>
+  <p class="note">Winning number sirf authorized admin update kar sakta hai. Save karne se pehle details check karna.</p>
+  <form id="settingsForm">
+    <label for="newWinningNumber">Winning number (1–10)</label>
+    <input id="newWinningNumber" type="number" min="1" max="10" required>
+    <label for="newPrizeName">Prize name</label>
+    <input id="newPrizeName" type="text" maxlength="100" placeholder="Enter prize name" required>
+    <button id="saveSettingsBtn" type="submit">💾 Save Settings</button>
+  </form>
+  <p id="settingsMessage" class="message"></p>
+</div>
+
+<div class="card">
+  <h2>🎮 Recent Entries</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Player</th><th>Gender</th><th>Number</th><th>Round</th><th>Result</th></tr></thead>
+      <tbody id="entriesBody"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>👥 Registered Players</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Gender</th></tr></thead>
+      <tbody id="playersBody"><tr><td colspan="2">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+  </section>
+</div><script>
+const SUPABASE_URL = "https://ympapgkyybosupolhynb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_y6_iNtd-1CZTcs8K190naw_2QrWCyOZ";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+const loginCard = $("loginCard");
+const dashboard = $("dashboard");
+
+function showMessage(id, text) {
+  $(id).textContent = text;
+}
+
+function escapeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+async function verifyAdmin() {
+  const { data: { user }, error: authError } = await db.auth.getUser();
+  if (authError || !user) {
+    loginCard.classList.remove("hidden");
+    dashboard.classList.add("hidden");
+    return false;
+  }
+
+  const { data: admin, error } = await db
+    .from("pookies_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error || !admin) {
+    loginCard.classList.remove("hidden");
+    dashboard.classList.add("hidden");
+    showMessage("loginMessage", "Admin access denied. Check your authorized account.");
+    return false;
+  }
+
+  loginCard.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+  $("welcome").textContent = "Welcome, authorized admin! 🎀";
+  return true;
+}
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("loginBtn").disabled = true;
+  showMessage("loginMessage", "Logging in...");
+
+  try {
+    const { error } = await db.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("password").value
+    });
+    if (error) throw error;
+
+    const allowed = await verifyAdmin();
+    if (allowed) await loadDashboard();
+  } catch (error) {
+    showMessage("loginMessage", error.message || "Login failed.");
+  } finally {
+    $("loginBtn").disabled = false;
+  }
+});
+
+async function loadDashboard() {
+  showMessage("dashboardMessage", "Loading dashboard...");
+  $("entriesBody").innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+  $("playersBody").innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
+
+  try {
+    const allowed = await verifyAdmin();
+    if (!allowed) return;
+
+    const results = await Promise.all([
+      db.from("pookies_users").select("id, display_name, gender"),
+      db.from("pookies_entries")
+        .select("user_id, selected_number, is_winner, round_id, created_at")
+        .order("created_at", { ascending: false }).limit(100),
+      db.from("pookies_game_settings")
+        .select("winning_number, prize_name, current_round")
+        .eq("id", 1).single()
+    ]);
+
+    const [playersRes, entriesRes, settingsRes] = results;
+    if (playersRes.error) throw playersRes.error;
+    if (entriesRes.error) throw entriesRes.error;
+    if (settingsRes.error) throw settingsRes.error;
+
+    const players = playersRes.data || [];
+    const entries = entriesRes.data || [];
+    const settings = settingsRes.data;
+
+    $("playerCount").textContent = players.length;
+    $("entryCount").textContent = entries.length;
+    $("winningNumber").textContent = settings.winning_number;
+    $("roundNumber").textContent = settings.current_round ?? 1;
+    $("newWinningNumber").value = settings.winning_number;
+    $("newPrizeName").value = settings.prize_name || "";
+
+    const playerMap = new Map(players.map(p => [p.id, p]));
+
+    $("playersBody").innerHTML = players.length
+      ? players.map(p => `<tr><td>${escapeText(p.display_name)}</td><td>${escapeText(p.gender)}</td></tr>`).join("")
+      : '<tr><td colspan="2">No players yet.</td></tr>';
+
+    $("entriesBody").innerHTML = entries.length
+      ? entries.map(e => {
+          const p = playerMap.get(e.user_id);
+          return `<tr>
+            <td>${escapeText(p?.display_name || "Unknown player")}</td>
+            <td>${escapeText(p?.gender || "—")}</td>
+            <td>${escapeText(e.selected_number)}</td>
+            <td>${escapeText(e.round_id)}</td>
+            <td>${e.is_winner ? "🏆 Winner" : "Not winner"}</td>
+          </tr>`;
+        }).join("")
+      : '<tr><td colspan="5">No entries yet.</td></tr>';
+
+    showMessage("dashboardMessage", "Dashboard loaded successfully! 💗");
+  } catch (error) {
+    showMessage("dashboardMessage",
+      "Could not load dashboard: " + (error.message || "Unknown error") +
+      "\nCheck your Supabase table permissions.");
+  }
+}
+
+$("settingsForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const number = Number($("newWinningNumber").value);
+  const prize = $("newPrizeName").value.trim();
+
+  if (!Number.isInteger(number) || number < 1 || number > 10) {
+    showMessage("settingsMessage", "Winning number must be between 1 and 10.");
+    return;
+  }
+  if (!prize) {
+    showMessage("settingsMessage", "Please enter a prize name.");
+    return;
+  }
+
+  $("saveSettingsBtn").disabled = true;
+  showMessage("settingsMessage", "Saving...");
+
+  try {
+    if (!(await verifyAdmin())) throw new Error("Admin access denied.");
+
+    const { error } = await db.from("pookies_game_settings")
+      .update({
+        winning_number: number,
+        prize_name: prize,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", 1);
+
+    if (error) throw error;
+
+    showMessage("settingsMessage", "Settings updated! 🎉");
+    await loadDashboard();
+  } catch (error) {
+    showMessage("settingsMessage",
+      "Could not update settings: " + (error.message || "Unknown error"));
+  } finally {
+    $("saveSettingsBtn").disabled = false;
+  }
+});
+
+$("refreshBtn").addEventListener("click", loadDashboard);
+
+$("logoutBtn").addEventListener("click", async () => {
+  await db.auth.signOut();
+  dashboard.classList.add("hidden");
+  loginCard.classList.remove("hidden");
+  showMessage("loginMessage", "Logged out successfully.");
+});
+
+db.auth.onAuthStateChange((_event, session) => {
+  if (!session) {
+    dashboard.classList.add("hidden");
+    loginCard.classList.remove("hidden");
+  }
+});
+
+(async () => {
+  if (await verifyAdmin()) await loadDashboard();
+})();
+</script></body>
+</html>
