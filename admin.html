@@ -267,6 +267,7 @@ async function loadDashboard() {
       : '<tr><td colspan="5">No entries yet.</td></tr>';
 
     showMessage("dashboardMessage", "Dashboard loaded successfully! 💗");
+    await loadWinnerHistory();
   } catch (error) {
     showMessage("dashboardMessage",
       "Could not load dashboard: " + (error.message || "Unknown error") +
@@ -372,5 +373,62 @@ $("newRoundBtn").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
+  async function loadWinnerHistory() {
+const body = document.getElementById("historyBody");
+
+body.innerHTML =
+'<tr><td colspan="4">Loading history...</td></tr>';
+
+try {
+const allowed = await verifyAdmin();
+
+if (!allowed) {
+  throw new Error("Admin access denied.");
+}
+
+const { data, error } = await db
+  .from("pookies_entries")
+  .select("user_id, selected_number, is_winner, round_id, created_at")
+  .order("created_at", { ascending: false })
+  .limit(200);
+
+if (error) throw error;
+
+const { data: players, error: playerError } = await db
+  .from("pookies_users")
+  .select("id, display_name");
+
+if (playerError) throw playerError;
+
+const names = new Map(
+  (players || []).map(player => [
+    player.id,
+    player.display_name
+  ])
+);
+
+if (!data || data.length === 0) {
+  body.innerHTML =
+    '<tr><td colspan="4">No history available yet.</td></tr>';
+  return;
+}
+
+body.innerHTML = data.map(entry => `
+  <tr>
+    <td>${escapeText(entry.round_id)}</td>
+    <td>${escapeText(names.get(entry.user_id) || "Unknown player")}</td>
+    <td>${escapeText(entry.selected_number)}</td>
+    <td>${entry.is_winner ? "🏆 Winner" : "Not winner"}</td>
+  </tr>
+`).join("");
+
+} catch (error) {
+body.innerHTML =
+'<tr><td colspan="4">Could not load history. Check dashboard permissions.</td></tr>';
+
+console.error("Winner history error:", error);
+
+}
+}
 </script></body>
 </html>
